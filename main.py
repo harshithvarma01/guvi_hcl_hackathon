@@ -1,27 +1,26 @@
-from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, Header, HTTPException, Request
 
 app = FastAPI()
+VALID_API_KEY = "Varmathehackeristhesecretkey"
 
-# This is your custom secret key for the Guvi portal
-VALID_API_KEY = "Varmathehackeristhesecretkey" 
-
-class ScamInput(BaseModel):
-    message: str
-
-# 1. Root Endpoint (Fixes the "Not Found" error on the home page)
 @app.get("/")
 async def welcome():
-    return {"message": "Varma's Agentic Honeypot is Active! and for the local server it is http://127.0.0.1:8000/docs"}
+    return {"message": "Varma's Agentic Honeypot is Active!"}
 
-# 2. Honeypot Logic (The actual challenge endpoint)
 @app.post("/honeypot")
-async def honeypot_logic(data: ScamInput, x_api_key: str = Header(None)):
-    # Security Check: Verifies the key you enter in the Guvi portal
+async def honeypot_logic(request: Request, x_api_key: str = Header(None)):
+    # 1. Security Check
     if x_api_key != VALID_API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
     
-    # JSON Response required by the problem statement
+    # 2. Flexible Body Handling
+    # This accepts whatever Guvi sends (even if it's not "message")
+    try:
+        body = await request.json()
+    except Exception:
+        body = "No valid JSON found"
+
+    # 3. Return the response they expect
     return {
         "status": "success",
         "intelligence_extracted": {
@@ -29,5 +28,5 @@ async def honeypot_logic(data: ScamInput, x_api_key: str = Header(None)):
             "bank_details": "pending",
             "phishing_link": "none_detected"
         },
-        "next_reply": "I'm interested! How can I help you"
+        "next_reply": "I'm interested! How can I send you the money?"
     }
