@@ -15,13 +15,13 @@ async def honeypot_logic(request: Request, x_api_key: str = Header(None)):
         return JSONResponse(status_code=401, content={"detail": "Invalid API Key"})
     
     # 2. Consume the body without validating it
-    # This prevents the 422 error regardless of what Guvi sends
+    # This bypasses the 422 error by treating the body as optional
     try:
         await request.json()
     except Exception:
         pass 
 
-    # 3. Return the exact JSON structure the challenge requires
+    # 3. Return the exact JSON structure required by the hackathon
     return {
         "status": "success",
         "intelligence_extracted": {
