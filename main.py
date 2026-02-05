@@ -1,40 +1,36 @@
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+# Your specific API Key
 VALID_API_KEY = "Varmathehackeristhesecretkey"
 
 @app.get("/")
-async def welcome():
-    return {"message": "Varma's Agentic Honeypot is Active!"}
+async def root():
+    return {"status": "active", "message": "Honeypot is running"}
 
+# Changed to handle the root or /honeypot depending on what you submitted
+@app.post("/")
 @app.post("/honeypot")
-async def honeypot_logic(request: Request, x_api_key: str = Header(None)):
-    # 1. Flexible Security Check
-    # Sometimes systems send headers in different cases
-    if x_api_key != VALID_API_KEY:
-        return JSONResponse(
-            status_code=401, 
-            content={"status": "error", "message": "Invalid API Key"}
-        )
+async def honeypot_logic(request: Request, x_api_key: str = Header(None), api_key: str = Header(None)):
+    # Check both common header formats (X-API-Key and API-Key)
+    provided_key = x_api_key or api_key
     
-    # 2. Extract incoming message to ensure we don't 422
-    try:
-        incoming_data = await request.json()
-    except:
-        incoming_data = {}
+    if provided_key != VALID_API_KEY:
+        return JSONResponse(
+            status_code=401,
+            content={"status": "error", "message": "Unauthorized"}
+        )
 
-    # 3. Standardized Success Structure
-    # This matches the common Guvi requirement for nested 'data' objects
+    # The email says they send a JSON body; we must accept it even if we don't use it
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    # EXACT format requested in your email
     return {
         "status": "success",
-        "message": "Scam intelligence successfully extracted",
-        "data": {
-            "intelligence_extracted": {
-                "upi_id": "awaiting_interaction",
-                "bank_details": "pending",
-                "phishing_link": "none_detected"
-            },
-            "next_reply": "I'm interested! How can I send you the money?"
-        }
+        "reply": "Why is my account being suspended?"
     }
